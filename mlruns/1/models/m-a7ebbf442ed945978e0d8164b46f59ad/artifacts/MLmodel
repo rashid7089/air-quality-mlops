@@ -1,0 +1,23 @@
+artifact_path: /home/muhammad/air-quality-mlops/mlruns/1/models/m-a7ebbf442ed945978e0d8164b46f59ad/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.skops
+    predict_fn: predict
+    python_version: 3.11.15
+  sklearn:
+    code: null
+    pickled_model: model.skops
+    serialization_format: skops
+    sklearn_version: 1.9.0
+    skops_trusted_types: null
+mlflow_version: 3.14.0
+model_id: m-a7ebbf442ed945978e0d8164b46f59ad
+model_size_bytes: 3805540
+model_uuid: m-a7ebbf442ed945978e0d8164b46f59ad
+prompts: null
+run_id: b7bd7b7e8bdb41db8707cb907ce045b2
+utc_time_created: '2026-07-29 08:02:38.458320'
