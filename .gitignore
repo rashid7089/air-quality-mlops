@@ -8,3 +8,5 @@ wheels/
 
 # Virtual environments
 .venv
+data/monitoring/predictions.csv
+.DS_Store
