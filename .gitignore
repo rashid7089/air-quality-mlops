@@ -5,12 +5,29 @@ build/
 dist/
 wheels/
 *.egg-info
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
 # Virtual environments
 .venv
-data/monitoring/predictions.csv
+
+# OS files
 .DS_Store
 
+# Secrets - .env.example is committed, .env never is
+.env
+
+# MLflow local tracking state; the Compose service owns the real store
+mlruns/
+mlflow.db
+
+# Generated data and artifacts.
+# Note: data/raw/air_quality.json, models/model.joblib and
+# reports/monitoring.html are already tracked on purpose, so an evaluator can
+# reproduce the results without calling the API. Ignore rules do not affect
+# files that are already tracked.
 data/processed/
 data/raw/
 data/monitoring/*.csv

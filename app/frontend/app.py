@@ -1,8 +1,13 @@
+"""Streamlit frontend.
+
+All predictions are obtained over HTTP from the FastAPI service; this module
+never imports joblib or loads the model artifact.
+"""
+
 import os
 
 import requests
 import streamlit as st
-
 
 # FastAPI address
 API_URL = os.getenv(
@@ -201,7 +206,3 @@ if submitted:
         st.error(
             f"Prediction request failed: {error}"
         )
-
-    """To open straemlit frontend run : uv run streamlit run app/frontend/app.py \
-  --server.port 8501 \
-  --browser.gatherUsageStats false"""

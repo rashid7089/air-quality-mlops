@@ -5,7 +5,9 @@ services:
       dockerfile: Dockerfile.api
 
     volumes:
+      # The trained artifact is read-only to the service.
       - ./models:/app/models:ro
+      # Prediction logs must survive redeploys for Evidently to stay useful.
       - monitoring_data:/app/data/monitoring
 
     ports:
@@ -16,6 +18,9 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
+      start_period: 20s
+
+    restart: unless-stopped
 
   frontend:
     build:
@@ -23,7 +28,8 @@ services:
       dockerfile: Dockerfile.frontend
 
     environment:
-      API_URL: http://api:8000
+      # Service-name networking; the frontend never loads the model itself.
+      API_URL: ${API_URL:-http://api:8000}
 
     ports:
       - "8501:8501"
@@ -31,6 +37,15 @@ services:
     depends_on:
       api:
         condition: service_healthy
+
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+    restart: unless-stopped
 
   mlflow:
     image: ghcr.io/mlflow/mlflow:latest
@@ -47,6 +62,8 @@ services:
 
     ports:
       - "5000:5000"
+
+    restart: unless-stopped
 
 volumes:
   monitoring_data:
