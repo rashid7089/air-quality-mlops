@@ -1,9 +1,18 @@
+"""Generate the Evidently drift report from reference and current batches."""
+
+from __future__ import annotations
+
+import logging
 from pathlib import Path
 
 import pandas as pd
 from evidently import Report
 from evidently.presets import DataDriftPreset, DataSummaryPreset
 
+from air_quality.features import FEATURES
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+logger = logging.getLogger(__name__)
 
 # Project paths
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -25,39 +34,31 @@ REPORT_PATH = (
 )
 
 
-# Features used by the trained model
-FEATURES = [
-    "pm2_5",
-    "pm10",
-    "temperature_2m",
-    "relative_humidity_2m",
-    "wind_speed_10m",
-    "hour",
-    "day_of_week",
-    "pm2_5_lag_1",
-    "pm2_5_lag_3",
-    "pm2_5_rolling_mean_6",
-]
+def load_reference_data() -> pd.DataFrame:
+    """Load the reference batch, rebuilding it from processed data if absent.
 
+    ``train.py`` writes this file from the held-out test slice. The fallback
+    below reproduces that same final-15% slice so the report can still be
+    generated from a processed table alone.
+    """
+    if REFERENCE_PATH.exists():
+        reference_data = pd.read_csv(REFERENCE_PATH)
+        missing = [column for column in FEATURES if column not in reference_data]
+        if not missing:
+            return reference_data[FEATURES].copy()
+        logger.warning("Reference file is missing %s; rebuilding it.", missing)
 
-def create_reference_data() -> pd.DataFrame:
-    """Create reference data from the final 15% of processed data."""
+    if not PROCESSED_PATH.exists():
+        raise FileNotFoundError(
+            f"Neither a reference batch nor processed data was found: {PROCESSED_PATH}"
+        )
 
     processed_data = pd.read_parquet(PROCESSED_PATH)
-
     test_start = int(len(processed_data) * 0.85)
-
     reference_data = processed_data.iloc[test_start:][FEATURES].copy()
 
-    REFERENCE_PATH.parent.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    reference_data.to_csv(
-        REFERENCE_PATH,
-        index=False,
-    )
+    REFERENCE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    reference_data.to_csv(REFERENCE_PATH, index=False)
 
     return reference_data
 
@@ -65,37 +66,33 @@ def create_reference_data() -> pd.DataFrame:
 def main() -> None:
     """Generate the Evidently monitoring report."""
 
-    if not PROCESSED_PATH.exists():
-        raise FileNotFoundError(
-            "Processed data was not found: "
-            f"{PROCESSED_PATH}"
-        )
-
     if not PREDICTIONS_PATH.exists():
         raise FileNotFoundError(
-            "No prediction logs were found. "
-            "Make predictions using Streamlit first."
+            "No prediction logs were found. Submit at least one prediction "
+            "through FastAPI or Streamlit first."
         )
 
-    # Create or recreate the reference batch
-    reference_data = create_reference_data()
+    reference_data = load_reference_data()
 
     # Read current production prediction inputs
     prediction_logs = pd.read_csv(PREDICTIONS_PATH)
+
+    missing = [column for column in FEATURES if column not in prediction_logs]
+    if missing:
+        raise ValueError(f"The prediction log is missing feature columns: {missing}")
 
     current_data = prediction_logs[FEATURES].copy()
 
     if current_data.empty:
         raise ValueError(
-            "The prediction log is empty. "
-            "Make at least one prediction first."
+            "The prediction log is empty. Make at least one prediction first."
         )
 
     if len(current_data) < 5:
-        print(
-            "Warning: the current dataset contains fewer than "
-            "5 rows. The report will run, but drift results "
-            "will be more meaningful with additional predictions."
+        logger.warning(
+            "The current batch has only %d rows. The report will still be "
+            "generated, but drift results need more predictions to be meaningful.",
+            len(current_data),
         )
 
     # Create the Evidently report
@@ -118,9 +115,9 @@ def main() -> None:
 
     snapshot.save_html(str(REPORT_PATH))
 
-    print(f"Reference rows: {len(reference_data)}")
-    print(f"Current rows: {len(current_data)}")
-    print(f"Saved monitoring report to: {REPORT_PATH}")
+    logger.info("Reference rows: %d", len(reference_data))
+    logger.info("Current rows: %d", len(current_data))
+    logger.info("Saved monitoring report to: %s", REPORT_PATH)
 
 
 if __name__ == "__main__":
