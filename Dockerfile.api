@@ -1,0 +1,20 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Copy the uv executable
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# Copy dependency files first (for Docker layer caching)
+COPY pyproject.toml uv.lock ./
+
+# Install only project dependencies
+# Do NOT install the project itself as a Python package
+RUN uv sync --frozen --no-dev --no-install-project
+
+# Copy the rest of the project
+COPY . .
+
+EXPOSE 8000
+
+CMD [".venv/bin/uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
