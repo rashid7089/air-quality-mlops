@@ -10,3 +10,9 @@ wheels/
 .venv
 data/monitoring/predictions.csv
 .DS_Store
+
+data/processed/
+data/raw/
+data/monitoring/*.csv
+reports/*.html
+models/
