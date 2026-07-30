@@ -23,6 +23,25 @@ dependencies = [
 
 
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+[tool.ruff]
+line-length = 90
+target-version = "py311"
+exclude = [".venv", "mlruns", "data", "reports"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E501"]
+
 [build-system]
 requires = ["uv_build>=0.11.16,<0.13.0"]
 build-backend = "uv_build"
