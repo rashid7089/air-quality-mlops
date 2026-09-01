@@ -5,7 +5,7 @@ exceed a high PM2.5 pollution threshold. Data is collected from Open-Meteo,
 transformed into a leakage-free feature table, used to train and compare three
 models tracked in MLflow, served through a typed FastAPI endpoint, consumed by a
 Streamlit frontend, monitored with Evidently, containerised with Docker Compose,
-and deployed through Dokploy.
+and deployed through Dokploy. This project developed during the Tuwaiq Applied Artificial Intelligence Bootcamp.
 
 | | |
 |---|---|
